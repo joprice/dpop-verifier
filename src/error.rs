@@ -26,8 +26,8 @@ pub enum DpopError {
     HtmMismatch,
     #[error("malformed htu, reason: {0}")]
     MalformedHtu(String),
-    #[error("htu mismatch")]
-    HtuMismatch,
+    #[error("htu mismatch: actual: {0} expected: {1}")]
+    HtuMismatch(String, String),
     #[error("Malformed ath")]
     AthMalformed,
     #[error("missing ath")]

@@ -40,7 +40,7 @@ enum Jwk {
 }
 
 /// Configuration for HMAC-based nonce mode.
-/// 
+///
 /// Stateless HMAC-based nonces: encode ts+rand+ctx and MAC it.
 #[derive(Clone, Debug)]
 pub struct HmacConfig {
@@ -53,28 +53,28 @@ pub struct HmacConfig {
 
 impl HmacConfig {
     /// Create a new HMAC configuration with a secret that can be converted to `SecretBox<[u8]>`.
-    /// 
+    ///
     /// Accepts either a `SecretBox<[u8]>` or any type that can be converted to bytes
     /// (e.g., `&[u8]`, `Vec<u8>`). Non-boxed types will be automatically converted to
     /// `SecretBox` internally.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use dpop_verifier::{HmacConfig, NonceMode};
-    /// 
+    ///
     /// // With a byte array (b"..." syntax)
     /// let config = HmacConfig::new(b"my-secret-key", 300, true, true, true);
     /// let mode = NonceMode::Hmac(config);
-    /// 
+    ///
     /// // With a byte slice
     /// let secret_slice: &[u8] = b"my-secret-key";
     /// let config = HmacConfig::new(secret_slice, 300, true, true, true);
-    /// 
+    ///
     /// // With a Vec<u8>
     /// let secret = b"my-secret-key".to_vec();
     /// let config = HmacConfig::new(&secret, 300, true, true, true);
-    /// 
+    ///
     /// // With a SecretBox (already boxed)
     /// use secrecy::SecretBox;
     /// let secret_box = SecretBox::from(b"my-secret-key".to_vec());
@@ -110,7 +110,6 @@ pub enum NonceMode {
     /// Stateless HMAC-based nonces: encode ts+rand+ctx and MAC it
     Hmac(HmacConfig),
 }
-
 
 #[derive(Debug, Clone)]
 pub struct VerifyOptions {
@@ -413,7 +412,10 @@ impl DpopVerifier {
         let expected_htu_normalized = normalize_htu(expected_htu)?;
         let actual_htu_normalized = normalize_htu(&claims.htu)?;
         if actual_htu_normalized != expected_htu_normalized {
-            return Err(DpopError::HtuMismatch);
+            return Err(DpopError::HtuMismatch(
+                actual_htu_normalized,
+                expected_htu_normalized,
+            ));
         }
 
         Ok((expected_htm_normalized, expected_htu_normalized))
@@ -1263,13 +1265,7 @@ mod tests {
         let opts = VerifyOptions {
             max_age_seconds: 300,
             future_skew_seconds: 5,
-            nonce_mode: NonceMode::Hmac(HmacConfig::new(
-                &secret,
-                300,
-                true,
-                true,
-                false,
-            )),
+            nonce_mode: NonceMode::Hmac(HmacConfig::new(&secret, 300, true, true, false)),
             client_binding: None,
         };
         assert!(
@@ -1301,13 +1297,7 @@ mod tests {
         let opts = VerifyOptions {
             max_age_seconds: 300,
             future_skew_seconds: 5,
-            nonce_mode: NonceMode::Hmac(HmacConfig::new(
-                &secret,
-                300,
-                true,
-                true,
-                false,
-            )),
+            nonce_mode: NonceMode::Hmac(HmacConfig::new(&secret, 300, true, true, false)),
             client_binding: None,
         };
         let err = verify_proof(&mut store, &jws, expected_htu, expected_htm, None, opts)
@@ -1348,13 +1338,7 @@ mod tests {
         let opts = VerifyOptions {
             max_age_seconds: 300,
             future_skew_seconds: 5,
-            nonce_mode: NonceMode::Hmac(HmacConfig::new(
-                &secret,
-                300,
-                true,
-                true,
-                false,
-            )),
+            nonce_mode: NonceMode::Hmac(HmacConfig::new(&secret, 300, true, true, false)),
             client_binding: None,
         };
         let err = verify_proof(&mut store, &jws, expected_htu, expected_htm, None, opts)
@@ -1397,13 +1381,7 @@ mod tests {
         let opts = VerifyOptions {
             max_age_seconds: 300,
             future_skew_seconds: 5,
-            nonce_mode: NonceMode::Hmac(HmacConfig::new(
-                &secret,
-                300,
-                true,
-                true,
-                false,
-            )),
+            nonce_mode: NonceMode::Hmac(HmacConfig::new(&secret, 300, true, true, false)),
             client_binding: None,
         };
         let err = verify_proof(&mut store, &jws, expected_htu, expected_htm, None, opts)
@@ -1449,13 +1427,7 @@ mod tests {
         let opts = VerifyOptions {
             max_age_seconds: 300,
             future_skew_seconds: 5,
-            nonce_mode: NonceMode::Hmac(HmacConfig::new(
-                &secret,
-                300,
-                true,
-                true,
-                false,
-            )),
+            nonce_mode: NonceMode::Hmac(HmacConfig::new(&secret, 300, true, true, false)),
             client_binding: None,
         };
         let err = verify_proof(&mut store, &jws, expected_htu, expected_htm, None, opts)
@@ -1501,13 +1473,7 @@ mod tests {
         let opts = VerifyOptions {
             max_age_seconds: 300,
             future_skew_seconds: 5,
-            nonce_mode: NonceMode::Hmac(HmacConfig::new(
-                &secret,
-                300,
-                true,
-                true,
-                false,
-            )),
+            nonce_mode: NonceMode::Hmac(HmacConfig::new(&secret, 300, true, true, false)),
             client_binding: None,
         };
         let err = verify_proof(&mut store, &jws, expected_htu, expected_htm, None, opts)
@@ -1548,13 +1514,7 @@ mod tests {
         let opts = VerifyOptions {
             max_age_seconds: 300,
             future_skew_seconds: 5,
-            nonce_mode: NonceMode::Hmac(HmacConfig::new(
-                &secret,
-                300,
-                true,
-                true,
-                true,
-            )),
+            nonce_mode: NonceMode::Hmac(HmacConfig::new(&secret, 300, true, true, true)),
             client_binding: Some(ClientBinding::new(client_id)),
         };
         assert!(
@@ -1597,13 +1557,7 @@ mod tests {
         let opts = VerifyOptions {
             max_age_seconds: 300,
             future_skew_seconds: 5,
-            nonce_mode: NonceMode::Hmac(HmacConfig::new(
-                &secret,
-                300,
-                true,
-                true,
-                true,
-            )),
+            nonce_mode: NonceMode::Hmac(HmacConfig::new(&secret, 300, true, true, true)),
             client_binding: Some(ClientBinding::new(verify_client_id)),
         };
         let err = verify_proof(&mut store, &jws, expected_htu, expected_htm, None, opts)
@@ -1679,7 +1633,11 @@ mod tests {
             "htu":expected_htu,
             "nonce": nonce2
         });
-        let jws2 = make_jws(&sk, serde_json::json!({"typ":"dpop+jwt","alg":"ES256","jwk":{"kty":"EC","crv":"P-256","x":x,"y":y}}), p2);
+        let jws2 = make_jws(
+            &sk,
+            serde_json::json!({"typ":"dpop+jwt","alg":"ES256","jwk":{"kty":"EC","crv":"P-256","x":x,"y":y}}),
+            p2,
+        );
         let mut store2 = MemoryStore::default();
         let opts2 = VerifyOptions {
             max_age_seconds: 300,
