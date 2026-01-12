@@ -8,20 +8,20 @@ use url::{Position, Url};
 /// - ensure non-empty path ("/")
 /// - resolve dot-segments
 pub fn normalize_htu(input: &str) -> Result<String, DpopError> {
-    let mut url = Url::parse(input).map_err(|_| DpopError::MalformedHtu)?;
+    let mut url = Url::parse(input).map_err(|e| DpopError::MalformedHtu(e.to_string()))?;
     let scheme = url.scheme().to_ascii_lowercase();
     if scheme != "http" && scheme != "https" {
-        return Err(DpopError::MalformedHtu);
+        return Err(DpopError::MalformedHtu("scheme".to_string()));
     }
 
     match url.host_str() {
         Some(host) if !host.is_empty() => {
             let lower = host.to_ascii_lowercase();
             url.set_host(Some(&lower))
-                .map_err(|_| DpopError::MalformedHtu)?;
+                .map_err(|e| DpopError::MalformedHtu(format!("Failed setting host: {e}")))?;
         }
         _ => {
-            return Err(DpopError::MalformedHtu);
+            return Err(DpopError::MalformedHtu("Missing host".to_string()));
         }
     }
 
@@ -39,7 +39,9 @@ pub fn normalize_htu(input: &str) -> Result<String, DpopError> {
     // resolve dot-segments
     let mut norm: Vec<&str> = Vec::new();
     {
-        let segs = url.path_segments().ok_or(DpopError::MalformedHtu)?;
+        let segs = url
+            .path_segments()
+            .ok_or_else(|| DpopError::MalformedHtu("Missing path segment".to_string()))?;
         for s in segs {
             match s {
                 "" | "." => {}
@@ -121,7 +123,7 @@ mod tests {
     #[test]
     fn rejects_non_http_schemes() {
         let err = normalize_htu("ftp://example.com/a").unwrap_err();
-        assert!(matches!(err, DpopError::MalformedHtu));
+        assert!(matches!(err, DpopError::MalformedHtu("a")));
     }
 
     #[test]

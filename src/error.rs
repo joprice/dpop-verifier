@@ -24,8 +24,8 @@ pub enum DpopError {
     InvalidMethod,
     #[error("htm mismatch")]
     HtmMismatch,
-    #[error("malformed htu")]
-    MalformedHtu,
+    #[error("malformed htu, reason: {0}")]
+    MalformedHtu(String),
     #[error("htu mismatch")]
     HtuMismatch,
     #[error("Malformed ath")]
